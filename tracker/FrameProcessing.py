@@ -222,10 +222,8 @@ def placeText(ignore, i, dst, x, y):
         if x>s[i][0] and x<s[i][1] and y>s[i][2] and y<s[i][3]:
             object_number = i + 1
             flag = False
-
-def checkCorrelation(frame_box_current, frame_box_template):
     
-def processImage(frame_box, references, data, frame_box_template):
+def processImage(frame_box, references, data):
     global videoData
     videoData = data
     #prescreening

@@ -42,16 +42,13 @@ class Frame_Info:
 
 def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
     cap = cv2.VideoCapture(videoFile)  # crashes here
-    frame_box_template = None
     for frame in range(startFrame, endFrame):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame)  # opencv3
         print 'Current frame: '+ str(frame)         
         frameNo = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  # opencv3
         ret, f = cap.read()
         frame_box = Frame_Info(f, frame, fps)
-        if frame_box_template == None:
-            frame_box_template = frame_box
-        f = processImage(frame_box, img, data, frame_box_template)
+        f = processImage(frame_box, img, data)
         if ret:
             try:
                 queue.put([frameNo, f])
@@ -62,7 +59,7 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
 def singleProcess(processCount, fileLength, videoFile, fps, img, data):
     frameQueue = []
     bunches = createArrays(1, fileLength, fps)
-    getFrame(frameQueue, 0, fileLength - 1, 0, videoFile, fps, img, data)
+    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data)
     results = []
     for i in range(bunches[0][0], bunches[0][1] - 1):
         results.append(frameQueue[i])
