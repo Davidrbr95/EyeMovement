@@ -1,0 +1,108 @@
+import cv2
+import multiprocessing as mp
+import math
+import numpy as np
+import datamani
+import drMatches
+from drMatches import Position
+import FrameProcessing
+from FrameProcessing import processImage
+import time
+
+class Frame_Info:
+    img_main = None
+    img_out = None
+    img_blackout = None
+    template = []
+    frame_index = 0
+    frame_count = 0
+    video_fps = 0
+    eye_x = 0
+    eye_y = 0
+
+    def __init__(self, main, frame_index, fps):
+        self.img_main = main
+        self.frame_index = frame_index
+        self.frame_count = frame_index*1000.0/fps
+        self.video_fps = fps
+        self.img_blackout = main.copy()
+
+    def addXY(self, x, y):
+        self.eye_x = x
+        self.eye_y = y
+
+    def addTemplate(self, template):
+        self.template = template
+
+    def setOutImage(self, out):
+        self.img_out = out
+
+    def updateBlackout(self, blackout):
+        self.img_blackout = blackout
+
+def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
+    cap = cv2.VideoCapture(videoFile)  # crashes here
+    frame_box_template = None
+    for frame in range(startFrame, endFrame):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame)  # opencv3
+        print 'Current frame: '+ str(frame)         
+        frameNo = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  # opencv3
+        ret, f = cap.read()
+        frame_box = Frame_Info(f, frame, fps)
+        if frame_box_template == None:
+            frame_box_template = frame_box
+        f = processImage(frame_box, img, data, frame_box_template)
+        if ret:
+            try:
+                queue.put([frameNo, f])
+            except:
+                queue.append([frameNo, f])
+    cap.release()
+
+def singleProcess(processCount, fileLength, videoFile, fps, img, data):
+    frameQueue = []
+    bunches = createArrays(1, fileLength, fps)
+    getFrame(frameQueue, 0, fileLength - 1, 0, videoFile, fps, img, data)
+    results = []
+    for i in range(bunches[0][0], bunches[0][1] - 1):
+        results.append(frameQueue[i])
+    return results, False, None, None
+
+def multiProcess(processCount, fileLength, videoFile, fps, img, data):
+    qList = []
+    for i in range(processCount):
+    	qList.append(mp.JoinableQueue())
+    bunches = createArrays(processCount, fileLength, fps)
+    getFrames = []
+    for i in range(processCount):
+        getFrames.append(mp.Process(target=getFrame, args=(qList[i], bunches[i][0], bunches[i][1], videoFile, fps, img, data)))
+    for process in getFrames:
+        process.start()
+    results = []
+    for i in range(len(qList)):
+        results.append([qList[i].get() for p in range(bunches[i][0], bunches[i][1])])
+    return results, True, getFrames, qList
+
+def divideFrames(processCount, fileLength):
+    bunches = []
+    ratio = int(fileLength/processCount)
+    for startFrame in range(0, fileLength, ratio):
+        endFrame = startFrame + ratio
+        if fileLength-startFrame< 2*ratio:
+            endFrame = fileLength
+            bunches.append((startFrame, endFrame-10))
+            break
+        bunches.append((startFrame, endFrame))
+    return bunches
+
+def createArrays(processCount, fileLength, fps):
+    bunches = divideFrames(processCount, fileLength)
+    return bunches
+
+def terminate(processes, queues):
+    for process in processes:
+        process.terminate()
+        process.join()
+
+    for queue in queues:
+        queue.close()
