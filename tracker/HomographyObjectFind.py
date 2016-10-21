@@ -29,7 +29,7 @@ if __name__ == '__main__':
     height, width = temp.shape[:2]
     capSize = (width,height) ## this is the size of my source video
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') ## starts ouput file
-    success = cv2.VideoWriter('Please_Work_9.mp4',fourcc,fps,capSize)
+    success = cv2.VideoWriter('images/output.mp4',fourcc,fps,capSize)
     processCount = 4
     results, multi_flag, getFrames, qList = singleProcess(processCount, fileLen, file, fps, img, videoData)
     if multi_flag:
