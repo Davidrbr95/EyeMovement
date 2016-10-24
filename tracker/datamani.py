@@ -84,7 +84,7 @@ def createVideoData(textFile):
 
 def drawCircle(frame_box, videoData, ignore):
 	# alpha = 10
-	# delayFactor = 6 - int(frameCount/((1.0/fps)*1000.0) /  alpha) #delay factor
+	# delayFactor = 6 - int(frameCount/((1.0/fps)*1000.0) /  alpha)
 	idx_sub = binarySearch(videoData, frame_box.frame_count)
 	point = idx_sub
 	if point > len(videoData) - 1:
