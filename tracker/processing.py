@@ -13,12 +13,15 @@ class Frame_Info:
     img_main = None
     img_out = None
     img_blackout = None
+    img_original = None
     template = []
     frame_index = 0
     frame_count = 0
     video_fps = 0
     eye_x = 0
     eye_y = 0
+    dsts = None
+    dst_bol = False
 
     def __init__(self, main, frame_index, fps):
         self.img_main = main
@@ -26,6 +29,8 @@ class Frame_Info:
         self.frame_count = frame_index*1000.0/fps
         self.video_fps = fps
         self.img_blackout = main.copy()
+        self.img_original = main.copy()
+        self.dsts = list()
 
     def addXY(self, x, y):
         self.eye_x = x
@@ -40,20 +45,31 @@ class Frame_Info:
     def updateBlackout(self, blackout):
         self.img_blackout = blackout
 
+    def addDST(self, dst):
+        dst_bol = True
+        self.dsts.append(dst)
+    
+
+
 def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
     cap = cv2.VideoCapture(videoFile)  # crashes here
+    frame_box_template = None
+    first_flag = True
     for frame in range(startFrame, endFrame):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame)  # opencv3
         print 'Current frame: '+ str(frame)         
         frameNo = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  # opencv3
         ret, f = cap.read()
         frame_box = Frame_Info(f, frame, fps)
-        f = processImage(frame_box, img, data)
+        f, corr_flag = processImage(frame_box, img, data, frame_box_template, first_flag)
+        if corr_flag:
+            frame_box_template = frame_box
         if ret:
             try:
                 queue.put([frameNo, f])
             except:
                 queue.append([frameNo, f])
+        first_flag = False
     cap.release()
 
 def singleProcess(processCount, fileLength, videoFile, fps, img, data):

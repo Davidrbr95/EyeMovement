@@ -10,6 +10,8 @@ import polygons_overlapping
 import sys
 import templatefind
 import processing
+from skimage.measure import compare_ssim as ssim
+
 
 '''Creating instance variables'''
 MIN_MATCH_COUNT = 20
@@ -66,20 +68,22 @@ def startProcess(references, frame_box):
         # if first_run_flag == False:
         #     frame_box.img_main = img3
         poly_arr, poly_template = [], []
+        object_nmbr = i
         cmatch = 0
         template_flag = False
         referenceMatch(reference_1)
         while True:
             cmatch +=1
             good_matches= featureMatch(reference_1, frame_box)
-            matchesMask, ignore, dst, break_flag = drawBorders(good_matches, reference_1, frame_box)
+            matchesMask, ignore, dst, break_flag = drawBorders(good_matches, reference_1, frame_box, object_nmbr)
             if break_flag or cmatch>20:
                 # print "break"
                 break
             x, y = getXY(frame_box, videoData)
-            placeText(ignore, i, dst, x, y)
+            placeText(ignore, i, dst, x, y, frame_box)
     x, y = drawCircleAndMatches(ignore, good_matches, reference_1, frame_box)
-
+    frame_box.addXY(x, y)
+    cv2.putText(frame_box.img_main,str(frame_box.frame_index),(30,250), font, 1,(255,255,255),2,cv2.LINE_AA)
     if flag:
         cv2.putText(frame_box.img_main,'Gazing at none of the object',(250,30), font, 1,(255,255,255),2,cv2.LINE_AA)
     else:
@@ -109,7 +113,7 @@ def featureMatch(reference_1, frame_box):
             good.append(m)
     return good
 
-def drawBorders(good, reference_1, frame_box):
+def drawBorders(good, reference_1, frame_box, object_nmbr):
     global template_flag, poly_template
     ignore = False
     break_flag = False
@@ -189,7 +193,8 @@ def drawBorders(good, reference_1, frame_box):
         poly_arr.append(poly_current)
 
         try: 
-            frame_box.img_main = cv2.polylines(frame_box.img_main,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+            frame_box.dsts.append(dst)
+            frame_box.img_main = cv2.polylines(frame_box.img_main,[np.int32(dst)],True, (0, 255, 0),3, cv2.LINE_AA)
             frame_box.img_blackout = cv2.fillPoly(frame_box.img_blackout,[np.int32(dst)],(0,0,0))
         except:
             print 'EXCEPT BREAK'
@@ -212,20 +217,80 @@ def drawCircleAndMatches(ignore, good, reference_1, frame_box):
     # img3, pos = drMatches.drawMatches(img1,kp1,img2,kp2,good, pos) ## line must not execute
     return x, y
 
-def placeText(ignore, i, dst, x, y):
+def placeText(ignore, i, dst, x, y, frame_box):
     global s, flag, object_number
     if not ignore:
         s[i][0]=dst[0][0][0];
         s[i][1]=dst[3][0][0];
         s[i][2]=dst[0][0][1];
         s[i][3]=dst[2][0][1];
+        # frame_box.addS(s)
         if x>s[i][0] and x<s[i][1] and y>s[i][2] and y<s[i][3]:
             object_number = i + 1
             flag = False
+
+def mse(imageA, imageB):
+    # the 'Mean Squared Error' between the two images is the
+    # sum of the squared difference between the two images;
+    # NOTE: the two images must have the same dimension
+    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+    err /= float(imageA.shape[0] * imageA.shape[1])
     
-def processImage(frame_box, references, data):
+    # return the MSE, the lower the error, the more "similar"
+    # the two images are
+    return err
+
+def compare_images(imageA, imageB):
+    # compute the mean squared error and structural similarity
+    # index for the images
+    m = mse(imageA, imageB)
+    print m
+    s = ssim(imageA, imageB)
+    print s
+    return mse, s
+
+def drawTemplate(frame_box, frame_box_template):
+    ignore = False
+    x, y, ignore= datamani.drawCircle(frame_box, videoData, ignore)
+    frame_box.addXY(x, y)
+    ## Need to get all the dst for the previous frame_box
+    if frame_box.frame_index == 347:
+        print frame_box_template.dsts
+    ix = 0;
+    flag_write = True
+    for i, i_dst in enumerate(frame_box_template.dsts):
+        frame_box.img_main = cv2.polylines(frame_box.img_main,[np.int32(i_dst)],True, (0, 255, 0),3, cv2.LINE_AA)
+        if x>i_dst[0][0][0] and x<i_dst[3][0][0] and y>i_dst[0][0][1] and y<i_dst[2][0][1]:
+            flag_write = False
+            ix = i
+    cv2.putText(frame_box.img_main,str(frame_box.frame_index),(30,250), font, 1,(255,255,255),2,cv2.LINE_AA)
+    if flag_write:
+        cv2.putText(frame_box.img_main,'Gazing at none of the object',(250,30), font, 1,(255,255,255),2,cv2.LINE_AA)
+    else:
+        cv2.putText(frame_box.img_main,'Gazing at the '+str(ix)+' object',(250,30), font, 1,(255,255,255),2,cv2.LINE_AA)
+
+def checkCorrelation(frame_box_current, frame_box_template):
+    current_gray = cv2.cvtColor(frame_box_current.img_main, cv2.COLOR_BGR2GRAY)
+    template_gray = cv2.cvtColor(frame_box_template.img_original, cv2.COLOR_BGR2GRAY)
+    mse, si = compare_images(current_gray,template_gray)
+    corr_flag = False
+    if si<0.3:
+        print 'recalculate'
+        corr_flag = True
+    else:
+        print 'un-changed'
+    return corr_flag
+
+def processImage(frame_box, references, data, frame_box_template, first_flag):
     global videoData
     videoData = data
     #prescreening
-    startProcess(references, frame_box)
-    return frame_box.img_main
+    corr_flag = True
+    if not first_flag:
+        corr_flag = checkCorrelation(frame_box, frame_box_template)
+    if corr_flag:
+        startProcess(references, frame_box)
+        # Need to set template = frame_box
+    else:
+        drawTemplate(frame_box, frame_box_template)
+    return frame_box.img_main, corr_flag
