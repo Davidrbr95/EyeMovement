@@ -82,6 +82,7 @@ def startProcess(references, frame_box):
             x, y = getXY(frame_box, videoData)
             placeText(ignore, i, dst, x, y, frame_box)
     x, y = drawCircleAndMatches(ignore, good_matches, reference_1, frame_box)
+    frame_box.addXY(x, y)
     cv2.putText(frame_box.img_main,str(frame_box.frame_index),(30,250), font, 1,(255,255,255),2,cv2.LINE_AA)
     if flag:
         cv2.putText(frame_box.img_main,'Gazing at none of the object',(250,30), font, 1,(255,255,255),2,cv2.LINE_AA)
@@ -251,6 +252,7 @@ def compare_images(imageA, imageB):
 def drawTemplate(frame_box, frame_box_template):
     ignore = False
     x, y, ignore= datamani.drawCircle(frame_box, videoData, ignore)
+    frame_box.addXY(x, y)
     ## Need to get all the dst for the previous frame_box
     if frame_box.frame_index == 347:
         print frame_box_template.dsts
