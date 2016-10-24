@@ -75,7 +75,7 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
 def singleProcess(processCount, fileLength, videoFile, fps, img, data):
     frameQueue = []
     bunches = createArrays(1, fileLength, fps)
-    getFrame(frameQueue, 0, fileLength - 1, 0, videoFile, fps, img, data)
+    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data)
     results = []
     for i in range(bunches[0][0], bunches[0][1] - 1):
         results.append(frameQueue[i])

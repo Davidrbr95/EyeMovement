@@ -18,9 +18,9 @@ def writeFrames(result, success):
 if __name__ == '__main__':
     ######## Initialize Constants ########
     i = 0
-    img = [cv2.imread('ragu.png', 0), cv2.imread('frosted_flakes.png',0)] ## Reads in comparison images
-    videoData = datamani.createVideoData(open('mady.txt', 'r')) ## Reads in data file
-    file = "madison15.mp4"
+    img = [cv2.imread('images/ragu.png', 0), cv2.imread('images/frosted_flakes.png',0)] ## Reads in comparison images
+    videoData = datamani.createVideoData(open('images/mady.txt', 'r')) ## Reads in data file
+    file = "images/madison15.mp4"
     capture_temp = cv2.VideoCapture(file)
     fileLen = int((capture_temp).get(cv2.CAP_PROP_FRAME_COUNT))  # opencv3
     fps = capture_temp.get(cv2.CAP_PROP_FPS) ##fps
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     height, width = temp.shape[:2]
     capSize = (width,height) ## this is the size of my source video
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') ## starts ouput file
-    success = cv2.VideoWriter('Please_Work_9.mp4',fourcc,fps,capSize)
+    success = cv2.VideoWriter('images/output.mp4',fourcc,fps,capSize)
     processCount = 4
     results, multi_flag, getFrames, qList = multiProcess(processCount, fileLen, file, fps, img, videoData)
     if multi_flag:
