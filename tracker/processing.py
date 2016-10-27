@@ -29,10 +29,11 @@ class Frame_Info:
         self.frame_count = frame_index*1000.0/fps
         self.video_fps = fps
         self.img_blackout = main.copy()
-        self.img_original = main.copy()
         self.dsts = list()
-        self.eye_x = 0;
-        self.eye_y = 0;
+        self.eye_x = 0
+        self.eye_y = 0
+        height, width = main.shape[:2]
+        self.img_original = cv2.resize(main.copy(),(200, 200), interpolation = cv2.INTER_CUBIC)
 
     def addXY(self, x, y):
         self.eye_x = x

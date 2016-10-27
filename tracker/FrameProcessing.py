@@ -270,7 +270,7 @@ def drawTemplate(frame_box, frame_box_template):
         cv2.putText(frame_box.img_main,'Gazing at the '+str(ix)+' object',(250,30), font, 1,(255,255,255),2,cv2.LINE_AA)
 
 def checkCorrelation(frame_box_current, frame_box_template):
-    current_gray = cv2.cvtColor(frame_box_current.img_main, cv2.COLOR_BGR2GRAY)
+    current_gray = cv2.cvtColor(frame_box_current.img_original, cv2.COLOR_BGR2GRAY)
     template_gray = cv2.cvtColor(frame_box_template.img_original, cv2.COLOR_BGR2GRAY)
     mse, si = compare_images(current_gray,template_gray)
     corr_flag = False
