@@ -31,6 +31,8 @@ class Frame_Info:
         self.img_blackout = main.copy()
         self.img_original = main.copy()
         self.dsts = list()
+        self.eye_x = 0;
+        self.eye_y = 0;
 
     def addXY(self, x, y):
         self.eye_x = x
@@ -51,7 +53,7 @@ class Frame_Info:
     
 
 
-def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
+def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data, text_file):
     cap = cv2.VideoCapture(videoFile)  # crashes here
     frame_box_template = None
     first_flag = True
@@ -62,6 +64,15 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
         ret, f = cap.read()
         frame_box = Frame_Info(f, frame, fps)
         f, corr_flag = processImage(frame_box, img, data, frame_box_template, first_flag)
+        frame_box_variables = [frame_box.frame_index, frame_box.frame_count, frame_box.eye_x, frame_box.eye_y]
+        output_variables = ['', '', '', '']
+        for i in range(len(frame_box_variables)):
+            output_variables += str(frame_box_variables[i])
+            while output_variables[i] < 17:
+                output_variables[i] += ' '
+        for var in output_variables:
+            text_file.write(var)
+        text_file.write('\n')
         if corr_flag:
             frame_box_template = frame_box
         if ret:
@@ -72,10 +83,10 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data):
         first_flag = False
     cap.release()
 
-def singleProcess(processCount, fileLength, videoFile, fps, img, data):
+def singleProcess(processCount, fileLength, videoFile, fps, img, data, text_file):
     frameQueue = []
     bunches = createArrays(1, fileLength, fps)
-    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data)
+    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data, text_file)
     results = []
     for i in range(bunches[0][0], bunches[0][1] - 1):
         results.append(frameQueue[i])

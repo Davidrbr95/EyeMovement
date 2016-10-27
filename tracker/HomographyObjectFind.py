@@ -31,7 +31,10 @@ if __name__ == '__main__':
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') ## starts ouput file
     success = cv2.VideoWriter('images/output.mp4',fourcc,fps,capSize)
     processCount = 4
-    results, multi_flag, getFrames, qList = multiProcess(processCount, fileLen, file, fps, img, videoData)
+    text_file = open("images/Output.txt", "w")
+    text_file.write('Frame Number     Time Stamp       Gaze-X           Gaze-Y           ')
+    results, multi_flag, getFrames, qList = singleProcess(processCount, fileLen, file, fps, img, videoData, text_file)
+    text_file.close()
     if multi_flag:
         for result in results:
             writeFrames(result, success)
