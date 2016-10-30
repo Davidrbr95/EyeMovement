@@ -226,7 +226,10 @@ def placeText(ignore, i, dst, x, y, frame_box):
         s[i][3]=dst[2][0][1];
         # frame_box.addS(s)
         if x>s[i][0] and x<s[i][1] and y>s[i][2] and y<s[i][3]:
-            object_number = i + 1
+            if i == 0:
+                print 'I AM TRUE FOR REFERENCE IMAGE RAGU'
+            frame_box.fres_image = i
+            object_number = i+1
             flag = False
 
 def mse(imageA, imageB):
@@ -254,14 +257,16 @@ def drawTemplate(frame_box, frame_box_template):
     x, y, ignore= datamani.drawCircle(frame_box, videoData, ignore)
     frame_box.addXY(x, y)
     ## Need to get all the dst for the previous frame_box
-    if frame_box.frame_index == 347:
-        print frame_box_template.dsts
     ix = 0;
     flag_write = True
     for i, i_dst in enumerate(frame_box_template.dsts):
+        print 'DSTS: '+ str(i)+' DSTS_LENGTH: '+str(len(frame_box_template.dsts))
         frame_box.img_main = cv2.polylines(frame_box.img_main,[np.int32(i_dst)],True, (0, 255, 0),3, cv2.LINE_AA)
         if x>i_dst[0][0][0] and x<i_dst[3][0][0] and y>i_dst[0][0][1] and y<i_dst[2][0][1]:
+            frame_box.fres_image = i
             flag_write = False
+            if i == 0:
+                print 'I AM TRUE FOR REFERENCE IMAGE RAGU'
             ix = i
     cv2.putText(frame_box.img_main,str(frame_box.frame_index),(30,250), font, 1,(255,255,255),2,cv2.LINE_AA)
     if flag_write:

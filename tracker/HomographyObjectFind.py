@@ -8,7 +8,7 @@ from drMatches import Position
 import time
 import processing
 from processing import multiProcess, singleProcess
-
+import sortout
 def writeFrames(result, success):
     for frame in result:
         if len(frame) == 0:
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     i = 0
     img = [cv2.imread('images/ragu.png', 0), cv2.imread('images/frosted_flakes.png',0)] ## Reads in comparison images
     videoData = datamani.createVideoData(open('images/mady.txt', 'r')) ## Reads in data file
-    file = "images/madison15.mp4"
+    file = "images/madison_30sec.mp4"
     capture_temp = cv2.VideoCapture(file)
     fileLen = int((capture_temp).get(cv2.CAP_PROP_FRAME_COUNT))  # opencv3
     fps = capture_temp.get(cv2.CAP_PROP_FPS) ##fps
@@ -31,10 +31,15 @@ if __name__ == '__main__':
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') ## starts ouput file
     success = cv2.VideoWriter('images/output.mp4',fourcc,fps,capSize)
     processCount = 4
+    ref_names = ['Ragu', 'Frosted Flakes']
     text_file = open("images/Output.txt", "w")
-    text_file.write('Frame Number     Time Stamp       Gaze-X           Gaze-Y           ')
-    results, multi_flag, getFrames, qList = singleProcess(processCount, fileLen, file, fps, img, videoData, text_file)
+    text_file.write('Frame Number      Time Stamp       Gaze-X           Gaze-Y         Object Observed')
+    text_file.write('\n')
     text_file.close()
+    text_file = open("images/Output.txt", "a")
+    results, multi_flag, getFrames, qList = multiProcess(processCount, fileLen, file, fps, img, videoData, ref_names)
+    text_file.close()
+    sortout.sortOutput("images/Output.txt")
     if multi_flag:
         for result in results:
             writeFrames(result, success)

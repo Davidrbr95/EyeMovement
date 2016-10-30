@@ -9,6 +9,8 @@ import FrameProcessing
 from FrameProcessing import processImage
 import time
 
+head = True;
+
 class Frame_Info:
     img_main = None
     img_out = None
@@ -22,6 +24,7 @@ class Frame_Info:
     eye_y = 0
     dsts = None
     dst_bol = False
+    fres_image = None
 
     def __init__(self, main, frame_index, fps):
         self.img_main = main
@@ -34,6 +37,7 @@ class Frame_Info:
         self.eye_y = 0
         height, width = main.shape[:2]
         self.img_original = cv2.resize(main.copy(),(200, 200), interpolation = cv2.INTER_CUBIC)
+        self.fres_image = None
 
     def addXY(self, x, y):
         self.eye_x = x
@@ -54,7 +58,7 @@ class Frame_Info:
     
 
 
-def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data, text_file):
+def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data, ref_names):
     cap = cv2.VideoCapture(videoFile)  # crashes here
     frame_box_template = None
     first_flag = True
@@ -65,15 +69,23 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data, text_file):
         ret, f = cap.read()
         frame_box = Frame_Info(f, frame, fps)
         f, corr_flag = processImage(frame_box, img, data, frame_box_template, first_flag)
-        frame_box_variables = [frame_box.frame_index, frame_box.frame_count, frame_box.eye_x, frame_box.eye_y]
-        output_variables = ['', '', '', '']
-        for i in range(len(frame_box_variables)):
-            output_variables += str(frame_box_variables[i])
-            while output_variables[i] < 17:
-                output_variables[i] += ' '
-        for var in output_variables:
-            text_file.write(var)
+        if frame_box.fres_image == None:
+            object_viewed = 'None'
+        else:
+            # print 'I AM DOING TAKING OBJECT NAME'
+            print ref_names
+            print frame_box.fres_image
+            object_viewed = ref_names[1]
+        frame_box_variables = [frame_box.frame_index, frame_box.frame_count, frame_box.eye_x, frame_box.eye_y, object_viewed]
+        text_file = open("images/Output.txt", "a")
+        text_file.write('{:5} {:>16} {:>20f} {:>16f} {:>16s}'.format(frame_box_variables[0], frame_box_variables[1], frame_box_variables[2], frame_box_variables[3], frame_box_variables[4]))
         text_file.write('\n')
+        text_file.close()
+        # for i in range(len(frame_box_variables)):
+            # output_variables += str(frame_box_variables[i])
+            # output_variables += '           '
+        # print output_variables
+        # text_file.write(output_variables)
         if corr_flag:
             frame_box_template = frame_box
         if ret:
@@ -84,23 +96,23 @@ def getFrame(queue, startFrame, endFrame, videoFile, fps, img, data, text_file):
         first_flag = False
     cap.release()
 
-def singleProcess(processCount, fileLength, videoFile, fps, img, data, text_file):
+def singleProcess(processCount, fileLength, videoFile, fps, img, data, ref_names):
     frameQueue = []
     bunches = createArrays(1, fileLength, fps)
-    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data, text_file)
+    getFrame(frameQueue, 0, fileLength - 1, videoFile, fps, img, data, ref_names)
     results = []
     for i in range(bunches[0][0], bunches[0][1] - 1):
         results.append(frameQueue[i])
     return results, False, None, None
 
-def multiProcess(processCount, fileLength, videoFile, fps, img, data):
+def multiProcess(processCount, fileLength, videoFile, fps, img, data, ref_names):
     qList = []
     for i in range(processCount):
     	qList.append(mp.JoinableQueue())
     bunches = createArrays(processCount, fileLength, fps)
     getFrames = []
     for i in range(processCount):
-        getFrames.append(mp.Process(target=getFrame, args=(qList[i], bunches[i][0], bunches[i][1], videoFile, fps, img, data)))
+        getFrames.append(mp.Process(target=getFrame, args=(qList[i], bunches[i][0], bunches[i][1], videoFile, fps, img, data, ref_names)))
     for process in getFrames:
         process.start()
     results = []
