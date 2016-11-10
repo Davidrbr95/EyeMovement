@@ -752,5 +752,5 @@ Intial Set up options
   5. Matplot lib 
   6. Seaborn 
   7. Shinny R-plugging 
-  8. Order effects
+    8. Order effects
   9. Decision start = end times 

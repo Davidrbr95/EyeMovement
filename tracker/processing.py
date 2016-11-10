@@ -10,7 +10,9 @@ from FrameProcessing import processImage
 import time
 
 head = True;
-
+# class Reference_Template:
+#     #array of dsts
+#     #name of the reference image
 class Frame_Info:
     img_main = None
     img_out = None
