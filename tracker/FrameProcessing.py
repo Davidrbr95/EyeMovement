@@ -5,6 +5,7 @@ import numpy as np
 import datamani
 import drMatches
 from drMatches import Position, getXY
+from processing import Reference_Template
 import time
 import polygons_overlapping
 import sys
@@ -65,6 +66,8 @@ def startProcess(references, frame_box):
     first_run_flag = True
 
     for i, reference_1 in enumerate(references):
+        new_template = Reference_Template([], i)
+        frame_box.addTemplate(new_template)
         # if first_run_flag == False:
         #     frame_box.img_main = img3
         poly_arr, poly_template = [], []
@@ -75,7 +78,7 @@ def startProcess(references, frame_box):
         while True:
             cmatch +=1
             good_matches= featureMatch(reference_1, frame_box)
-            matchesMask, ignore, dst, break_flag = drawBorders(good_matches, reference_1, frame_box, object_nmbr)
+            matchesMask, ignore, dst, break_flag = drawBorders(good_matches, i, reference_1, frame_box, object_nmbr)
             if break_flag or cmatch>20:
                 # print "break"
                 break
@@ -113,7 +116,7 @@ def featureMatch(reference_1, frame_box):
             good.append(m)
     return good
 
-def drawBorders(good, reference_1, frame_box, object_nmbr):
+def drawBorders(good, ref_number, reference_1, frame_box, object_nmbr):
     global template_flag, poly_template
     ignore = False
     break_flag = False
@@ -193,7 +196,7 @@ def drawBorders(good, reference_1, frame_box, object_nmbr):
         poly_arr.append(poly_current)
 
         try: 
-            frame_box.dsts.append(dst)
+            frame_box.ref_templates[ref_number].appendDST(dst)
             frame_box.img_main = cv2.polylines(frame_box.img_main,[np.int32(dst)],True, (0, 255, 0),3, cv2.LINE_AA)
             frame_box.img_blackout = cv2.fillPoly(frame_box.img_blackout,[np.int32(dst)],(0,0,0))
         except:
@@ -227,7 +230,6 @@ def placeText(ignore, i, dst, x, y, frame_box):
         # frame_box.addS(s)
         if x>s[i][0] and x<s[i][1] and y>s[i][2] and y<s[i][3]:
             if i == 0:
-                print 'I AM TRUE FOR REFERENCE IMAGE RAGU'
             frame_box.fres_image = i
             object_number = i+1
             flag = False

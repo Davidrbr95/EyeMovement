@@ -10,19 +10,28 @@ from FrameProcessing import processImage
 import time
 
 head = True;
+class Reference_Template:
+    ref_dsts = []
+    image = None
+    def __init__(self, dsts, number):
+        self.ref_dsts = dsts
+        self.image = number
+    def appendDST(self, dst):
+        self.ref_dsts.append(dst)
+    def setImage(self, number):
+        self.image = number
 
 class Frame_Info:
     img_main = None
     img_out = None
     img_blackout = None
     img_original = None
-    template = []
     frame_index = 0
     frame_count = 0
     video_fps = 0
     eye_x = 0
     eye_y = 0
-    dsts = None
+    ref_templates = []
     dst_bol = False
     fres_image = None
 
@@ -32,7 +41,7 @@ class Frame_Info:
         self.frame_count = frame_index*1000.0/fps
         self.video_fps = fps
         self.img_blackout = main.copy()
-        self.dsts = list()
+        self.ref_templates = None
         self.eye_x = 0
         self.eye_y = 0
         height, width = main.shape[:2]
@@ -44,7 +53,7 @@ class Frame_Info:
         self.eye_y = y
 
     def addTemplate(self, template):
-        self.template = template
+        self.ref_templates.append(template)
 
     def setOutImage(self, out):
         self.img_out = out
@@ -52,9 +61,9 @@ class Frame_Info:
     def updateBlackout(self, blackout):
         self.img_blackout = blackout
 
-    def addDST(self, dst):
-        dst_bol = True
-        self.dsts.append(dst)
+    def addDST(self, dst, number):
+        self.dst_bol = True
+        self.ref_template[number].appendDST(dst)
     
 
 
